@@ -1,0 +1,6 @@
+# Dependencies
+go.sum
+go.mod
+
+# .env file for environment variables
+.env
