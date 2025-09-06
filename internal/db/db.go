@@ -2,25 +2,52 @@ package db
 
 import (
 	"database/sql"
+	"errors"
 	"log"
+	"os"
 	"path/filepath"
+	"runtime"
+	"sync"
 )
 
-var DB *sql.DB
+var (
+	DB   *sql.DB
+	once sync.Once
+)
 
-func Init() {
-	dbPath := filepath.Join("data", "app.db")
-	migrationsDir := "migrations"
+func Init() error {
+	var err error
+	once.Do(func() {
+		_, filename, _, ok := runtime.Caller(0)
+		if !ok {
+			err = errors.New("cannot get current file path")
+			return
+		}
+		baseDir := filepath.Dir(filepath.Dir(filename))
 
-	database, err := Connect(dbPath)
-	if err != nil {
-		log.Fatalf("Failed to connect to DB: %v", err)
-	}
+		dbPath := os.Getenv("DB_PATH")
+		if dbPath == "" {
+			dataDir := filepath.Join(baseDir, "data")
+			if err = os.MkdirAll(dataDir, 0755); err != nil {
+				return
+			}
+			dbPath = filepath.Join(dataDir, "app.db")
+		}
 
-	if err := Migrate(database, migrationsDir); err != nil {
-		log.Fatalf("Failed to run migrations: %v", err)
-	}
+		database, connectErr := Connect(dbPath)
+		if connectErr != nil {
+			err = connectErr
+			return
+		}
 
-	DB = database
-	log.Println("Database initialized and ready")
+		// Run migrations.
+		if migrateErr := Migrate(database); migrateErr != nil {
+			err = migrateErr
+			return
+		}
+
+		DB = database
+		log.Println("Database initialized and ready")
+	})
+	return err
 }

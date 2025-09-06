@@ -5,11 +5,15 @@ import (
 	"go_web_server/internal/db"
 	"go_web_server/internal/handlers"
 	middleware "go_web_server/internal/middlewares"
+	"log"
 	"net/http"
 )
 
 func main() {
-	db.Init()
+	// Initialize the database.
+	if err := db.Init(); err != nil {
+		log.Fatalf("failed to initialize database: %v", err)
+	}
 	defer db.DB.Close()
 
 	http.Handle("/api", middleware.Logger(http.HandlerFunc(handlers.HomeHandler)))
