@@ -4,3 +4,5 @@ go.mod
 
 # .env file for environment variables
 .env
+
+data
