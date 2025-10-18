@@ -4,15 +4,27 @@ import (
 	"go_web_server/internal/handlers"
 	middleware "go_web_server/internal/middlewares"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 )
 
-// New builds and returns the application's HTTP handler with routes and middleware.
 func New() http.Handler {
-	mux := http.NewServeMux()
+	r := chi.NewRouter()
 
-	// Routes
-	mux.Handle("/api", middleware.Logger(http.HandlerFunc(handlers.HomeHandler)))
-	mux.Handle("/health", middleware.Logger(http.HandlerFunc(handlers.HealthHandler)))
+	// Middleware
+	r.Use(middleware.Logger)
 
-	return mux
+	// Basic routes
+	r.Get("/api", handlers.HomeHandler)
+	r.Get("/health", handlers.HealthHandler)
+
+	// RESTful user routes
+	r.Route("/api/users", func(r chi.Router) {
+		r.Get("/", handlers.GetUsersHandler)       // GET /api/users
+		r.Post("/", handlers.CreateUserHandler)    // POST /api/users
+		r.Get("/{id}", handlers.GetUserHandler)    // GET /api/users/{id}
+		r.Put("/{id}", handlers.UpdateUserHandler) // PUT /api/users/{id}
+	})
+
+	return r
 }
