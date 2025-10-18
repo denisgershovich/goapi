@@ -2,7 +2,7 @@ package router
 
 import (
 	"go_web_server/internal/handlers"
-	middleware "go_web_server/internal/middlewares"
+	"go_web_server/internal/middlewares"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -12,7 +12,7 @@ func New() http.Handler {
 	r := chi.NewRouter()
 
 	// Middleware
-	r.Use(middleware.Logger)
+	r.Use(middlewares.Logger)
 
 	// Basic routes
 	r.Get("/api", handlers.HomeHandler)
@@ -20,10 +20,10 @@ func New() http.Handler {
 
 	// RESTful user routes
 	r.Route("/api/users", func(r chi.Router) {
-		r.Get("/", handlers.GetUsersHandler)       // GET /api/users
-		r.Post("/", handlers.CreateUserHandler)    // POST /api/users
-		r.Get("/{id}", handlers.GetUserHandler)    // GET /api/users/{id}
-		r.Put("/{id}", handlers.UpdateUserHandler) // PUT /api/users/{id}
+		r.Get("/", handlers.GetUsersHandler)                                    // GET /api/users
+		r.Get("/{id}", handlers.GetUserHandler)                                 // GET /api/users/{id}
+		r.With(middlewares.APIKeyAuth).Post("/", handlers.CreateUserHandler)    // protected POST /api/users
+		r.With(middlewares.APIKeyAuth).Put("/{id}", handlers.UpdateUserHandler) // protected PUT /api/users/{id}
 	})
 
 	return r
